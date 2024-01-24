@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1058153867300",
+    "project_id": "beggar-king-e20eb",
+    "storage_bucket": "beggar-king-e20eb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1058153867300:android:725a1b7f8c3f9d9faa90b1",
+        "android_client_info": {
+          "package_name": "com.example.beggarking"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJNTp2gT_Vaz91Gzgoh4eLEOXnkusYRRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
