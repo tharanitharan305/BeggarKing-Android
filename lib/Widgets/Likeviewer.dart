@@ -8,14 +8,16 @@ import '../Firebase/Insert_King.dart';
 final userAuth = FirebaseAuth.instance;
 
 class LikeManager extends StatefulWidget {
-  LikeManager(
-      {super.key,
-      required this.like,
-      required this.dislike,
-      required this.uuid});
-  var like;
-  var dislike;
-  String uuid;
+  const LikeManager({
+    super.key,
+    required this.like,
+    required this.dislike,
+    required this.uuid,
+  });
+  final dynamic like;
+  final dynamic dislike;
+  final String uuid;
+
   State<LikeManager> createState() => _LikeManagerState();
 }
 
@@ -33,7 +35,7 @@ class _LikeManagerState extends State<LikeManager> {
   Future<void> onlike() async {
     var dislist = widget.dislike;
     var likelist = widget.like;
-    var user = await FirebaseAuth.instance.currentUser!.email!;
+    var user = FirebaseAuth.instance.currentUser!.email!;
     if (likelist.contains(user)) {
       likelist.remove(user);
       await Insert_King().updateLike(likelist, widget.uuid);
@@ -52,7 +54,7 @@ class _LikeManagerState extends State<LikeManager> {
   void ondislike() async {
     var dislist = widget.dislike;
     var likelist = widget.like;
-    var user = await FirebaseAuth.instance.currentUser!.email!;
+    var user = FirebaseAuth.instance.currentUser!.email!;
     if (dislist.contains(user)) {
       dislist.remove(user);
       await Insert_King().updatedisLike(dislist, widget.uuid);
@@ -98,24 +100,25 @@ class _LikeManagerState extends State<LikeManager> {
     return Row(
       children: [
         IconButton(
-            onPressed: onlike,
-            icon: Icon(
-              Icons.thumb_up_alt_rounded,
-              color: liked ? Theme.of(context).colorScheme.primary : null,
-            )),
+          onPressed: onlike,
+          icon: Icon(
+            Icons.thumb_up_alt_rounded,
+            color: liked ? Theme.of(context).colorScheme.primary : null,
+          ),
+        ),
         Text(getLike(widget.like.length - 1)),
         Row(
           children: [
             IconButton(
-                onPressed: ondislike,
-                icon: Icon(
-                  Icons.thumb_down_alt_rounded,
-                  color:
-                      disliked ? Theme.of(context).colorScheme.primary : null,
-                )),
-            Text(getLike(widget.dislike.length - 1))
+              onPressed: ondislike,
+              icon: Icon(
+                Icons.thumb_down_alt_rounded,
+                color: disliked ? Theme.of(context).colorScheme.primary : null,
+              ),
+            ),
+            Text(getLike(widget.dislike.length - 1)),
           ],
-        )
+        ),
       ],
     );
   }

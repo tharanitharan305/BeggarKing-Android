@@ -27,8 +27,10 @@ class _AuthScreenState extends State<AuthScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    _fadeAnimation =
-        CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
+    );
     _animationController.forward();
   }
 
@@ -58,7 +60,7 @@ class _AuthScreenState extends State<AuthScreen>
               builder: (context, constraints) {
                 // Constrain the width of the form on wider screens (web/tablet)
                 final formWidth =
-                constraints.maxWidth > 500 ? 400.0 : double.infinity;
+                    constraints.maxWidth > 500 ? 400.0 : double.infinity;
 
                 return Center(
                   child: ConstrainedBox(
@@ -124,11 +126,18 @@ class __AuthFormState extends State<_AuthForm> {
     try {
       if (_isLogin) {
         await _firebase.signInWithEmailAndPassword(
-            email: _email, password: _password);
+          email: _email,
+          password: _password,
+        );
       } else {
-        await _firebase.createUserWithEmailAndPassword(
-            email: _email, password: _password);
-        // Note: You might want to store the username in Firestore or Realtime Database here.
+        final userCredential = await _firebase.createUserWithEmailAndPassword(
+          email: _email,
+          password: _password,
+        );
+        await userCredential.user?.updateDisplayName(_username.trim());
+      }
+      if (mounted) {
+        setState(() => _isAuthenticating = false);
       }
     } on FirebaseAuthException catch (error) {
       // Use a modern SnackBar for error feedback
@@ -167,32 +176,38 @@ class __AuthFormState extends State<_AuthForm> {
                 duration: const Duration(milliseconds: 300),
                 transitionBuilder: (child, animation) {
                   return SizeTransition(
-                      sizeFactor: animation,
-                      axisAlignment: -1.0,
-                      child: child);
+                    sizeFactor: animation,
+                    axisAlignment: -1.0,
+                    child: child,
+                  );
                 },
-                child: !_isLogin
-                    ? TextFormField(
-                  key: const ValueKey('username'),
-                  decoration: _buildInputDecoration(
-                      'Username', Icons.person_outline),
-                  validator: (value) {
-                    if (value == null || value.trim().length < 4) {
-                      return 'Please enter at least 4 characters.';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) => _username = value!,
-                )
-                    : const SizedBox.shrink(),
+                child:
+                    !_isLogin
+                        ? TextFormField(
+                          key: const ValueKey('username'),
+                          decoration: _buildInputDecoration(
+                            'Username',
+                            Icons.person_outline,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().length < 4) {
+                              return 'Please enter at least 4 characters.';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) => _username = value!,
+                        )
+                        : const SizedBox.shrink(),
               ),
               if (!_isLogin) const SizedBox(height: 12),
 
               // --- Email Field ---
               TextFormField(
                 key: const ValueKey('email'),
-                decoration:
-                _buildInputDecoration('Email Address', Icons.email_outlined),
+                decoration: _buildInputDecoration(
+                  'Email Address',
+                  Icons.email_outlined,
+                ),
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
                 textCapitalization: TextCapitalization.none,
@@ -211,8 +226,10 @@ class __AuthFormState extends State<_AuthForm> {
               // --- Password Field ---
               TextFormField(
                 key: const ValueKey('password'),
-                decoration:
-                _buildInputDecoration('Password', Icons.lock_outline),
+                decoration: _buildInputDecoration(
+                  'Password',
+                  Icons.lock_outline,
+                ),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.trim().length < 6) {
@@ -269,15 +286,14 @@ class __AuthFormState extends State<_AuthForm> {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: Colors.grey.shade600),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.0),
         borderSide: const BorderSide(
-            color: Color.fromRGBO(252, 186, 3, 1), width: 2.0),
+          color: Color.fromRGBO(252, 186, 3, 1),
+          width: 2.0,
+        ),
       ),
     );
   }
 }
-

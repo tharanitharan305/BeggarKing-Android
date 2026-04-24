@@ -1,13 +1,11 @@
 import 'package:flutter/cupertino.dart';
 
 class getSizedBox extends StatelessWidget {
-  getSizedBox({required this.height, required this.widht});
-  double height;
-  double widht;
+  const getSizedBox({super.key, required this.height, required this.widht});
+  final double height;
+  final double widht;
+
   Widget build(context) {
-    return SizedBox(
-      height: height,
-      width: widht,
-    );
+    return SizedBox(height: height, width: widht);
   }
 }

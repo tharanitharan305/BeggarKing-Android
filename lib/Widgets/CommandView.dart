@@ -6,14 +6,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../Firebase/Insert_King.dart';
-import 'Command.dart';
 import 'CommandBox.dart';
 import 'Parser.dart';
 
 class CommandsView extends StatefulWidget {
-  CommandsView({required this.comments, required this.uuid});
-  var comments;
-  String uuid;
+  const CommandsView({super.key, required this.comments, required this.uuid});
+  final List<dynamic> comments;
+  final String uuid;
+
   State<CommandsView> createState() => _CommandsState();
 }
 
@@ -38,18 +38,20 @@ class _CommandsState extends State<CommandsView> {
     var comment = widget.comments;
     return Column(
       children: [
-        if (comment.length <= 1)
-          Center(
-            child: Text("No comments found"),
-          ),
+        if (comment.length <= 1) Center(child: Text("No comments found")),
         if (comment.length > 1)
           SingleChildScrollView(
             child: Column(
               children: [
                 ...Parser()
                     .CommentGetParser(widget.comments)
-                    .map((e) => CommentBox(
-                        command: e.comment, userName: e.user, time: e.time))
+                    .map(
+                      (e) => CommentBox(
+                        command: e.comment,
+                        userName: e.user,
+                        time: e.time,
+                      ),
+                    )
                     .toList(),
               ],
             ),
@@ -63,6 +65,7 @@ class _CommandsState extends State<CommandsView> {
               validator: (value) {
                 if (value == null || value.length < 1 || value.isEmpty)
                   return "Write Something...";
+                return null;
               },
               onSaved: (value) {
                 setState(() {
@@ -70,14 +73,16 @@ class _CommandsState extends State<CommandsView> {
                 });
               },
               decoration: InputDecoration(
-                  labelText: "comments.....",
-                  prefixIcon:
-                      Icon(Icons.message_rounded, color: Colors.black12),
-                  suffixIcon: IconButton(
-                      onPressed: onComment, icon: Icon(Icons.send_rounded))),
+                labelText: "comments.....",
+                prefixIcon: Icon(Icons.message_rounded, color: Colors.black12),
+                suffixIcon: IconButton(
+                  onPressed: onComment,
+                  icon: Icon(Icons.send_rounded),
+                ),
+              ),
             ),
           ),
-        )
+        ),
       ],
     );
     // return ListView.builder(

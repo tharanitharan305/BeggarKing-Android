@@ -2,14 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class CommentBox extends StatelessWidget {
-  CommentBox(
-      {super.key,
-      required this.command,
-      required this.userName,
-      required this.time});
-  String command;
-  String userName;
-  DateTime time;
+  const CommentBox({
+    super.key,
+    required this.command,
+    required this.userName,
+    required this.time,
+  });
+  final String command;
+  final String userName;
+  final DateTime time;
+
   String userNameParse(String email) {
     String uname = email.split("@")[0];
     return uname;
@@ -45,21 +47,16 @@ class CommentBox extends StatelessWidget {
             children: [
               Text(
                 "@" + userNameParse(userName),
-                style:
-                    TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              SizedBox(
-                width: 10,
-              ),
-              Text(
-                timeParse(time),
-                style: TextStyle(color: Colors.black54),
-              )
+              SizedBox(width: 10),
+              Text(timeParse(time), style: TextStyle(color: Colors.black54)),
             ],
           ),
-          Column(
-            children: [Text(command)],
-          )
+          Column(children: [Text(command)]),
         ],
       ),
     );

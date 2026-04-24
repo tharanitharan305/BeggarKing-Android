@@ -1,9 +1,10 @@
 //import 'package:beggarking/Widgets/Command.dart';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class Insert_King {
@@ -31,35 +32,48 @@ class Insert_King {
   // String logitude;
   // int like;
   // int dislike;
-  putFile(
-    var pic,
-    String Location,
-    String country,
-    String localPin,
-    String area,
-    String district,
-    String state,
-    String latitude,
-    String logitude,
-    int like,
-    int dislike,
-  ) async {
-    var uuid = Uuid().v4();
-    final storage_ref = await FirebaseStorage.instance
-        .ref()
-        .child('King Pics')
-        .child('${FirebaseAuth.instance.currentUser!.email}')
-        .child(uuid);
-    await storage_ref.putFile(pic);
-    final Image_url = await storage_ref.getDownloadURL();
-    final cloud_ref = await FirebaseFirestore.instance.collection(
-      'King details',
-    );
-    await cloud_ref.doc(uuid).set({
+  Future<void> putFile({
+    required Uint8List picData,
+    required String fileName,
+    required String location,
+    required String country,
+    required String localPin,
+    required String area,
+    required String district,
+    required String state,
+    required String latitude,
+    required String logitude,
+    required int like,
+    required int dislike,
+  }) async {
+    if (picData.isEmpty || fileName.trim().isEmpty) {
+      throw Exception('Invalid file data provided for upload.');
+    }
+
+    final uuid = Uuid().v4();
+    final safeName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final storagePath =
+        'public/${DateTime.now().millisecondsSinceEpoch}_${uuid}_$safeName';
+
+    try {
+      await Supabase.instance.client.storage
+          .from('beggarPicks')
+          .uploadBinary(storagePath, picData);
+    } on StorageException catch (e) {
+      throw Exception('Supabase upload failed: ${e.message}');
+    } catch (e) {
+      throw Exception('Supabase upload failed: $e');
+    }
+
+    final imageUrl = Supabase.instance.client.storage
+        .from('beggarPicks')
+        .getPublicUrl(storagePath);
+    final cloudRef = FirebaseFirestore.instance.collection('King details');
+    await cloudRef.doc(uuid).set({
       'UserName': FirebaseAuth.instance.currentUser!.displayName,
       'User_email': FirebaseAuth.instance.currentUser!.email,
-      'King_url': Image_url,
-      'Address': Location,
+      'King_url': imageUrl,
+      'Address': location,
       'country': country,
       "localPin": localPin,
       "district": district,
@@ -77,24 +91,24 @@ class Insert_King {
     });
   }
 
-  Future<void> updateLike(var Users, String uuid) async {
+  Future<void> updateLike(dynamic users, String uuid) async {
     await FirebaseFirestore.instance
         .collection('King details')
         .doc(uuid)
-        .update({"likedUsers": Users.toSet().toList(), 'like': Users.length});
+        .update({"likedUsers": users.toSet().toList(), 'like': users.length});
   }
 
-  Future<void> updatedisLike(var Users, String uuid) async {
+  Future<void> updatedisLike(dynamic users, String uuid) async {
     await FirebaseFirestore.instance
         .collection('King details')
         .doc(uuid)
         .update({
-          "dislikedUsers": Users.toSet().toList(),
-          'dislike': Users.length,
+          "dislikedUsers": users.toSet().toList(),
+          'dislike': users.length,
         });
   }
 
-  Future<void> updatecomments(var comment, String uuid) async {
+  Future<void> updatecomments(dynamic comment, String uuid) async {
     await FirebaseFirestore.instance
         .collection('King details')
         .doc(uuid)

@@ -2,40 +2,44 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AlertBox extends StatelessWidget {
-  AlertBox({
+  const AlertBox({
+    super.key,
     required this.title,
     required this.b1,
-    required this.b2,
+    this.b2,
     required this.content,
   });
-  String title;
-  String b1;
-  String b2;
-  String content;
+  final String title;
+  final String b1;
+  final String? b2;
+  final String content;
 
   Widget build(context) {
-    var isB2 = b2 == null ? false : true;
+    final isB2 = b2 != null;
     return AlertDialog(
       title: Text(title),
       content: Text(content),
       actions: [
         if (!isB2)
           TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(b1))
-        else
-          TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(b1)),
-        TextButton(
             onPressed: () {
               Navigator.pop(context);
             },
-            child: Text(b2))
+            child: Text(b1),
+          )
+        else
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(b1),
+          ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(b2!),
+        ),
       ],
     );
   }

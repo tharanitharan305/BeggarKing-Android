@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -11,24 +11,31 @@ class KingPicker extends StatefulWidget {
 }
 
 class _KingPicker extends State<KingPicker> {
-  File? King;
+  XFile? king;
+  Uint8List? kingBytes;
+
   void onClick() async {
-    final image = await ImagePicker()
-        .pickImage(source: ImageSource.camera, imageQuality: 100);
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 100,
+    );
     if (image == null) return;
+    final bytes = await image.readAsBytes();
     setState(() {
-      King = File(image.path);
+      king = image;
+      kingBytes = bytes;
     });
   }
 
   Widget build(context) {
     return Container(
-      child: King == null
-          ? IconButton(onPressed: onClick, icon: Icon(Icons.camera_alt_rounded))
-          : Image(
-              image: FileImage(King!),
-              fit: BoxFit.contain,
-            ),
+      child:
+          king == null
+              ? IconButton(
+                onPressed: onClick,
+                icon: Icon(Icons.camera_alt_rounded),
+              )
+              : Image.memory(kingBytes!, fit: BoxFit.contain),
       height: 350,
     );
   }

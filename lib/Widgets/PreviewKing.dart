@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../Firebase/Insert_King.dart';
@@ -11,7 +11,8 @@ class PreviewKing extends StatefulWidget {
   _PreviewKingState createState() => _PreviewKingState();
 }
 
-class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin {
+class _PreviewKingState extends State<PreviewKing>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers for text fields to manage their state
@@ -23,7 +24,8 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
   final _countryController = TextEditingController();
 
   // State variables
-  File? _kingImage;
+  XFile? _kingImage;
+  Uint8List? _kingImageBytes;
   String _latitude = "";
   String _longitude = "";
   bool _isUploading = false;
@@ -43,7 +45,10 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    );
 
     // Controller for scale/pop animations
     _scaleController = AnimationController(
@@ -52,7 +57,10 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
       lowerBound: 0.0,
       upperBound: 1.0,
     );
-    _scaleAnimation = CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut);
+    _scaleAnimation = CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.elasticOut,
+    );
 
     // Start the initial animations
     _fadeController.forward();
@@ -75,12 +83,14 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
 
   Future<void> _pickImage() async {
     final image = await ImagePicker().pickImage(
-      source: ImageSource.camera,
+      source: ImageSource.gallery,
       maxWidth: 600, // Increased for better quality
     );
     if (image == null) return;
+    final bytes = await image.readAsBytes();
     setState(() {
-      _kingImage = File(image.path);
+      _kingImage = image;
+      _kingImageBytes = bytes;
     });
   }
 
@@ -101,9 +111,9 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
       _latitude = geolocator[7];
       _longitude = geolocator[8];
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to get location: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to get location: $e')));
     } finally {
       setState(() {
         _isFetchingLocation = false;
@@ -112,7 +122,7 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
   }
 
   void _launchKing() {
-    if (_kingImage == null) {
+    if (_kingImage == null || _kingImageBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select an image first.')),
       );
@@ -126,36 +136,41 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
       // Assuming Insert_King().putFile is an async operation
       Insert_King()
           .putFile(
-          _kingImage,
-          _streetController.text,
-          _areaController.text,
-          _countryController.text,
-          _pinController.text,
-          _districtController.text,
-          _stateController.text,
-          _latitude,
-          _longitude,
-          0,
-          0)
+            picData: _kingImageBytes!,
+            fileName: _kingImage!.name,
+            location: _streetController.text,
+            area: _areaController.text,
+            country: _countryController.text,
+            localPin: _pinController.text,
+            district: _districtController.text,
+            state: _stateController.text,
+            latitude: _latitude,
+            logitude: _longitude,
+            like: 0,
+            dislike: 0,
+          )
           .then((_) {
-        Navigator.pop(context);
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $error')),
-        );
-      }).whenComplete(() {
-        if(mounted){
-          setState(() {
-            _isUploading = false;
+            Navigator.pop(context);
+          })
+          .catchError((error) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Upload failed: $error')));
+          })
+          .whenComplete(() {
+            if (mounted) {
+              setState(() {
+                _isUploading = false;
+              });
+            }
           });
-        }
-      });
     }
   }
 
   void _resetImage() {
     setState(() {
       _kingImage = null;
+      _kingImageBytes = null;
     });
   }
 
@@ -188,10 +203,7 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
               ),
               const SizedBox(height: 16),
               // --- Form ---
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: _buildForm(),
-              ),
+              FadeTransition(opacity: _fadeAnimation, child: _buildForm()),
               const SizedBox(height: 24),
               // --- Action Buttons ---
               FadeTransition(
@@ -213,39 +225,45 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
       transitionBuilder: (child, animation) {
         return ScaleTransition(scale: animation, child: child);
       },
-      child: _kingImage == null
-          ? GestureDetector(
-        key: const ValueKey('picker'),
-        onTap: _pickImage,
-        child: Container(
-          height: 250,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300, width: 1),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.camera_alt_outlined,
-                    size: 50, color: Colors.grey[600]),
-                const SizedBox(height: 8),
-                Text('Tap to add a photo',
-                    style: TextStyle(color: Colors.grey[700])),
-              ],
-            ),
-          ),
-        ),
-      )
-          : Container(
-        key: const ValueKey('image'),
-        height: 350,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.file(_kingImage!, fit: BoxFit.cover),
-        ),
-      ),
+      child:
+          _kingImage == null
+              ? GestureDetector(
+                key: const ValueKey('picker'),
+                onTap: _pickImage,
+                child: Container(
+                  height: 250,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.camera_alt_outlined,
+                          size: 50,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap to add a photo',
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              : Container(
+                key: const ValueKey('image'),
+                height: 350,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.memory(_kingImageBytes!, fit: BoxFit.cover),
+                ),
+              ),
     );
   }
 
@@ -255,12 +273,14 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
         Expanded(
           child: ElevatedButton.icon(
             onPressed: _isFetchingLocation ? null : _getLocation,
-            icon: _isFetchingLocation
-                ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.my_location),
+            icon:
+                _isFetchingLocation
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.my_location),
             label: const Text("Auto-detect"),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -293,44 +313,70 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
   Widget _buildForm() {
     return Form(
       key: _formKey,
-      child: Column(
-        children: [
-          _buildTextFormField(
-              controller: _streetController,
-              label: "Street",
-              icon: Icons.signpost_outlined),
-          const SizedBox(height: 16),
-          _buildTextFormField(
-              controller: _areaController,
-              label: "Area / Taluk",
-              icon: Icons.travel_explore),
-          const SizedBox(height: 16),
-          _buildTextFormField(
-              controller: _districtController,
-              label: "District",
-              icon: Icons.location_city_outlined),
-          const SizedBox(height: 16),
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 560;
+          return Column(
             children: [
-              Expanded(
-                  child: _buildTextFormField(
-                      controller: _pinController,
-                      label: "PIN Code",
-                      icon: Icons.numbers)),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _buildTextFormField(
-                      controller: _stateController,
-                      label: "State",
-                      icon: Icons.map_outlined)),
+              _buildTextFormField(
+                controller: _streetController,
+                label: "Street",
+                icon: Icons.signpost_outlined,
+              ),
+              const SizedBox(height: 16),
+              _buildTextFormField(
+                controller: _areaController,
+                label: "Area / Taluk",
+                icon: Icons.travel_explore,
+              ),
+              const SizedBox(height: 16),
+              _buildTextFormField(
+                controller: _districtController,
+                label: "District",
+                icon: Icons.location_city_outlined,
+              ),
+              const SizedBox(height: 16),
+              if (isNarrow) ...[
+                _buildTextFormField(
+                  controller: _pinController,
+                  label: "PIN Code",
+                  icon: Icons.numbers,
+                ),
+                const SizedBox(height: 16),
+                _buildTextFormField(
+                  controller: _stateController,
+                  label: "State",
+                  icon: Icons.map_outlined,
+                ),
+              ] else
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextFormField(
+                        controller: _pinController,
+                        label: "PIN Code",
+                        icon: Icons.numbers,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildTextFormField(
+                        controller: _stateController,
+                        label: "State",
+                        icon: Icons.map_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 16),
+              _buildTextFormField(
+                controller: _countryController,
+                label: "Country",
+                icon: Icons.flag_outlined,
+              ),
             ],
-          ),
-          const SizedBox(height: 16),
-          _buildTextFormField(
-              controller: _countryController,
-              label: "Country",
-              icon: Icons.flag_outlined),
-        ],
+          );
+        },
       ),
     );
   }
@@ -364,17 +410,22 @@ class _PreviewKingState extends State<PreviewKing> with TickerProviderStateMixin
       children: [
         ElevatedButton.icon(
           onPressed: _isUploading ? null : _launchKing,
-          icon: _isUploading
-              ? const SizedBox.shrink()
-              : const Icon(Icons.rocket_launch_outlined),
-          label: _isUploading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text('Launch King'),
+          icon:
+              _isUploading
+                  ? const SizedBox.shrink()
+                  : const Icon(Icons.rocket_launch_outlined),
+          label:
+              _isUploading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Launch King'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
